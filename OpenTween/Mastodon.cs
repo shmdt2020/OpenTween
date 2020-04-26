@@ -38,13 +38,15 @@ namespace OpenTween
         public long UserId { get; private set; }
         public string Username { get; private set; } = "";
 
+        // ?? 演算子は左オペランドが null 以外なら、右オペランドを評価しない（短絡評価）
         public MastodonApi Api => this.api ?? throw new WebApiException("Unauthorized");
 
-        internal MastodonApi api = null!;
+        internal MastodonApi api = null!; // 最後の「!」の意味が分からない
 
         public void Initialize(MastodonCredential account)
         {
-            this.api = new MastodonApi(new Uri(account.InstanceUri), account.AccessTokenPlain);
+            this.api = new MastodonApi(new Uri(account.InstanceUri),
+                                       account.AccessTokenPlain);
 
             this.UserId = account.UserId;
             this.Username = account.Username;
@@ -52,7 +54,8 @@ namespace OpenTween
 
         public static async Task<MastodonRegisteredApp> RegisterClientAsync(Uri instanceUri)
         {
-            if (ApplicationSettings.MastodonClientIds.TryGetValue(instanceUri.Host, out var client))
+            if (ApplicationSettings.MastodonClientIds.TryGetValue(instanceUri.Host,
+                                                                  out var client)) // client の型は何？
             {
                 return new MastodonRegisteredApp
                 {
@@ -61,12 +64,18 @@ namespace OpenTween
                 };
             }
 
-            using var api = new MastodonApi(instanceUri);
-            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
-            var scope = "read write follow";
-            var application = await api.AppsRegister(ApplicationSettings.ApplicationName, redirectUri, scope, ApplicationSettings.WebsiteUrl)
-                .ConfigureAwait(false);
+            using var api = new MastodonApi(instanceUri); // using 変数宣言
 
+            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
+            string scope = "read write follow";
+
+            var application = await api.AppsRegister(ApplicationSettings.ApplicationName,
+                                                     redirectUri,
+                                                     scope,
+                                                     ApplicationSettings.WebsiteUrl)
+                                    .ConfigureAwait(false);
+
+            // $ は文字列補間 string.Format() に置換される
             System.Diagnostics.Debug.WriteLine($"ClientId: {application.ClientId}, ClientSecret: {application.ClientSecret}");
 
             return application;
@@ -74,21 +83,34 @@ namespace OpenTween
 
         public static Uri GetAuthorizeUri(Uri instanceUri, string clientId)
         {
-            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
-            var scope = "read write follow";
-            using var api = new MastodonApi(instanceUri);
+            using var api = new MastodonApi(instanceUri); // using 変数宣言
 
-            return api.OAuthAuthorize(clientId, "code", redirectUri, scope);
+            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
+            string scope = "read write follow";
+
+            return api.OAuthAuthorize(clientId,
+                                      "code",
+                                      redirectUri,
+                                      scope);
         }
 
-        public static async Task<string> GetAccessTokenAsync(Uri instanceUri, string clientId, string clientSecret,
-            string authorizationCode)
+        public static async Task<string> GetAccessTokenAsync(Uri instanceUri,
+                                                             string clientId,
+                                                             string clientSecret,
+                                                             string authorizationCode)
         {
-            using var api = new MastodonApi(instanceUri);
+            using var api = new MastodonApi(instanceUri); // using 変数宣言
+
             var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
             var scope = "read write follow";
-            var token = await api.OAuthToken(clientId, clientSecret, redirectUri, "authorization_code", authorizationCode, scope)
-                .ConfigureAwait(false);
+
+            var token = await api.OAuthToken(clientId,
+                                             clientSecret,
+                                             redirectUri,
+                                             "authorization_code",
+                                             authorizationCode,
+                                             scope)
+                              .ConfigureAwait(false);
 
             return token.AccessToken;
         }
@@ -96,6 +118,7 @@ namespace OpenTween
         public static async Task<MastodonCredential> VerifyCredentialAsync(Uri instanceUri, string accessToken)
         {
             using var api = new MastodonApi(instanceUri, accessToken);
+
             var account = await api.AccountsVerifyCredentials();
             var instance = await api.Instance();
 
@@ -103,18 +126,20 @@ namespace OpenTween
             {
                 InstanceUri = instanceUri.AbsoluteUri,
                 UserId = account.Id,
-                Username = $"{account.Username}@{instance.Uri}",
+                Username = $"{account.Username}@{instance.Uri}", // $ は文字列補間
                 AccessTokenPlain = accessToken,
             };
         }
 
         public async Task<PostClass> PostStatusAsync(PostStatusParams param)
         {
-            var response = await this.Api.StatusesPost(param.Text, param.InReplyToStatusId, param.MediaIds)
-                .ConfigureAwait(false);
+            var response = await this.Api.StatusesPost(param.Text,
+                                                       param.InReplyToStatusId,
+                                                       param.MediaIds)
+                                 .ConfigureAwait(false);
 
             var status = await response.LoadJsonAsync()
-                .ConfigureAwait(false);
+                               .ConfigureAwait(false);
 
             return this.CreatePost(status);
         }
@@ -125,15 +150,16 @@ namespace OpenTween
             if (backward)
             {
                 statuses = await this.Api.TimelinesHome(maxId: tab.OldestId)
-                    .ConfigureAwait(false);
+                                 .ConfigureAwait(false);
             }
             else
             {
                 statuses = await this.Api.TimelinesHome()
-                    .ConfigureAwait(false);
+                                 .ConfigureAwait(false);
             }
 
-            return statuses.Select(x => this.CreatePost(x)).ToArray();
+            return statuses.Select(x => this.CreatePost(x))
+                           .ToArray();
         }
 
         public PostClass CreatePost(MastodonStatus status)
@@ -158,7 +184,8 @@ namespace OpenTween
                 }
 
                 post.Media = reblog.MediaAttachments
-                    .Select(x => new MediaInfo(x.PreviewUrl)).ToList();
+                                   .Select(x => new MediaInfo(x.PreviewUrl))
+                                   .ToList();
 
                 post.UserId = reblog.Account.Id;
                 post.ScreenName = reblog.Account.Acct;
@@ -185,7 +212,8 @@ namespace OpenTween
                 }
 
                 post.Media = status.MediaAttachments
-                    .Select(x => new MediaInfo(x.PreviewUrl)).ToList();
+                                   .Select(x => new MediaInfo(x.PreviewUrl))
+                                   .ToList();
 
                 post.UserId = status.Account.Id;
                 post.ScreenName = status.Account.Acct;
@@ -216,10 +244,9 @@ namespace OpenTween
             return post;
         }
 
-        public DateTimeUtc ParseDateTime(string datetime)
-            => DateTimeUtc.Parse(datetime, DateTimeFormatInfo.InvariantInfo);
+        public DateTimeUtc ParseDateTime(string datetime) => DateTimeUtc.Parse(datetime,
+                                                                               DateTimeFormatInfo.InvariantInfo);
 
-        public void Dispose()
-            => this.api?.Dispose();
+        public void Dispose() => this.api?.Dispose();
     }
 }
