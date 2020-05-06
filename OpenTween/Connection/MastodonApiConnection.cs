@@ -37,14 +37,13 @@ namespace OpenTween.Connection
 {
     public sealed class MastodonApiConnection : IMastodonApiConnection
     {
-        public Uri InstanceUri { get; }
-        public Uri WebsocketUri { get; }
-        public string? AccessToken { get; }
+        public Uri InstanceUri { get; private set; }
+        public Uri WebsocketUri { get; private set; }
+        public string? AccessToken { get; private set; }
 
-        internal HttpClient http = null!;
+        private HttpClient http = null!;
 
-        public MastodonApiConnection(Uri instanceUri)
-            : this(instanceUri, accessToken: null)
+        public MastodonApiConnection(Uri instanceUri) : this(instanceUri, null)
         {
         }
 
@@ -103,6 +102,52 @@ namespace OpenTween.Connection
             }
         }
 
+        public       Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
+            => this.PostLazyAsync<T>(HttpMethod.Post, uri, param);
+
+        public async Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
+        {
+            var requestUri = new Uri(this.InstanceUri, uri);
+
+            if (param == null)
+                param = Enumerable.Empty<KeyValuePair<string, string>>();
+
+            try
+            {
+                using var request = new HttpRequestMessage(method, requestUri);
+                using var postContent = new FormUrlEncodedContent(param);
+
+                if (!string.IsNullOrEmpty(this.AccessToken))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
+
+                request.Content = postContent;
+                HttpResponseMessage? response = null;
+
+                try
+                {
+                    response = await this.http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                    await this.CheckStatusCode(response).ConfigureAwait(false);
+
+                    var result = new LazyJson<T>(response);
+                    response = null;
+
+                    return result;
+                }
+                finally
+                {
+                    response?.Dispose();
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
+            }
+            catch (OperationCanceledException ex)
+            {
+                throw new WebApiException("Timeout", ex);
+            }
+        }
+
         public async Task<Stream> GetStreamAsync(Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
         {
             var requestUri = new Uri(this.InstanceUri, uri);
@@ -134,60 +179,21 @@ namespace OpenTween.Connection
             }
         }
 
-        public Task<LazyJson<T>> PostLazyAsync<T>(Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
-            => this.PostLazyAsync<T>(HttpMethod.Post, uri, param);
-
-        public async Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
-        {
-            var requestUri = new Uri(this.InstanceUri, uri);
-
-            if (param == null)
-                param = Enumerable.Empty<KeyValuePair<string, string>>();
-
-            try
-            {
-                using var request = new HttpRequestMessage(method, requestUri);
-                using var postContent = new FormUrlEncodedContent(param);
-
-                if (!string.IsNullOrEmpty(this.AccessToken))
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", this.AccessToken);
-
-                request.Content = postContent;
-
-                HttpResponseMessage? response = null;
-                try
-                {
-                    response = await this.http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
-                        .ConfigureAwait(false);
-
-                    await this.CheckStatusCode(response)
-                        .ConfigureAwait(false);
-
-                    var result = new LazyJson<T>(response);
-                    response = null;
-
-                    return result;
-                }
-                finally
-                {
-                    response?.Dispose();
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
-            }
-            catch (OperationCanceledException ex)
-            {
-                throw new WebApiException("Timeout", ex);
-            }
-        }
-
         public void Dispose()
         {
             Networking.WebProxyChanged -= this.Networking_WebProxyChanged;
             this.http.Dispose();
         }
+
+        private void InitializeHttpClient()
+        {
+            var innerHandler = Networking.CreateHttpClientHandler();
+            innerHandler.CachePolicy = new RequestCachePolicy(RequestCacheLevel.BypassCache);
+
+            this.http = Networking.CreateHttpClient(innerHandler);
+        }
+
+        private void Networking_WebProxyChanged(object sender, EventArgs e) => this.InitializeHttpClient();
 
         private async Task CheckStatusCode(HttpResponseMessage response)
         {
@@ -198,8 +204,7 @@ namespace OpenTween.Connection
             string responseText;
             using (var content = response.Content)
             {
-                responseText = await content.ReadAsStringAsync()
-                    .ConfigureAwait(false);
+                responseText = await content.ReadAsStringAsync().ConfigureAwait(false);
             }
 
             if (!string.IsNullOrWhiteSpace(responseText))
@@ -212,21 +217,10 @@ namespace OpenTween.Connection
                     if (!MyCommon.IsNullOrEmpty(errorText))
                         throw new WebApiException(errorText, responseText);
                 }
-                catch (SerializationException) { }
+                catch (SerializationException) {}
             }
 
             throw new WebApiException(statusCode.ToString(), responseText);
         }
-
-        private void InitializeHttpClient()
-        {
-            var innerHandler = Networking.CreateHttpClientHandler();
-            innerHandler.CachePolicy = new RequestCachePolicy(RequestCacheLevel.BypassCache);
-
-            this.http = Networking.CreateHttpClient(innerHandler);
-        }
-
-        private void Networking_WebProxyChanged(object sender, EventArgs e)
-            => this.InitializeHttpClient();
     }
 }

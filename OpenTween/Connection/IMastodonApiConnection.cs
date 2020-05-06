@@ -31,11 +31,11 @@ namespace OpenTween.Connection
 {
     public interface IMastodonApiConnection : IDisposable
     {
-        Task<T> GetAsync<T>(Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
+        Task<T>           GetAsync<T>(                        Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
 
-        Task<LazyJson<T>> PostLazyAsync<T>(Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
+        Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
         Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
 
-        Task<Stream> GetStreamAsync(Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
+        Task<Stream>      GetStreamAsync(                     Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
     }
 }
