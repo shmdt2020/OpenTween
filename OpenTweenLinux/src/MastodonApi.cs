@@ -115,7 +115,7 @@ namespace OpenTween.Api
             var endpoint = new Uri("/api/v1/accounts/verify_credentials", UriKind.Relative);
             return this.Connection.GetAsync<MastodonAccount>(endpoint, null);
         }
-
+        /*
         public Task<MastodonStatus[]> TimelinesHome(long? maxId = null,
                                                     long? sinceId = null,
                                                     int? limit = null)
@@ -193,7 +193,7 @@ namespace OpenTween.Api
 
             return this.Connection.PostLazyAsync<MastodonStatus>(endpoint, null);
         }
-
+        */
         public Task<MastodonInstance> Instance()
         {
             var endpoint = new Uri("/api/v1/instance", UriKind.Relative);

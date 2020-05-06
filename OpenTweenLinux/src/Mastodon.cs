@@ -29,7 +29,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using OpenTween.Api;
 using OpenTween.Api.DataModel;
-using OpenTween.Models;
+//using OpenTween.Models;
 
 namespace OpenTween
 {
@@ -126,7 +126,7 @@ namespace OpenTween
                 AccessTokenPlain = accessToken,
             };
         }
-
+        /*
         public async Task<PostClass> PostStatusAsync(PostStatusParams param)
         {
             var response = await this.Api.StatusesPost(param.Text,
@@ -242,7 +242,7 @@ namespace OpenTween
 
         public DateTimeUtc ParseDateTime(string datetime) => DateTimeUtc.Parse(datetime,
                                                                                DateTimeFormatInfo.InvariantInfo);
-
+        */
         public void Dispose() => this.api?.Dispose();
     }
 }

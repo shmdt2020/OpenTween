@@ -6,4 +6,6 @@
 Thumbs.db
 TestResult.xml
 *.VisualState.xml
+OpenTweenLinux/bin/*
+OpenTweenLinux/obj/*
 *~
