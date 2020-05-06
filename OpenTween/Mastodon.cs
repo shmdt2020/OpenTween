@@ -38,16 +38,13 @@ namespace OpenTween
         public long UserId { get; private set; }
         public string Username { get; private set; } = "";
 
-        // ?? 演算子は左オペランドが null 以外なら、右オペランドを評価しない（短絡評価）
         public MastodonApi Api => this.api ?? throw new WebApiException("Unauthorized");
-
-        internal MastodonApi api = null!; // 最後の「!」の意味が分からない
+        internal MastodonApi api = null!;
 
         public void Initialize(MastodonCredential account)
         {
             this.api = new MastodonApi(new Uri(account.InstanceUri),
                                        account.AccessTokenPlain);
-
             this.UserId = account.UserId;
             this.Username = account.Username;
         }
@@ -55,8 +52,9 @@ namespace OpenTween
         public static async Task<MastodonRegisteredApp> RegisterClientAsync(Uri instanceUri)
         {
             if (ApplicationSettings.MastodonClientIds.TryGetValue(instanceUri.Host,
-                                                                  out var client)) // client の型は何？
+                                                                  out Tuple<string, string> client))
             {
+                // client_id, client_secret の組が既にある場合
                 return new MastodonRegisteredApp
                 {
                     ClientId = client.Item1,
@@ -64,54 +62,52 @@ namespace OpenTween
                 };
             }
 
-            using var api = new MastodonApi(instanceUri); // using 変数宣言
+            // client_id, client_secret の組がないので、インスタンスにアプリケーションを登録して取得する
+            using var api = new MastodonApi(instanceUri);
 
             var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
             string scope = "read write follow";
 
-            var application = await api.AppsRegister(ApplicationSettings.ApplicationName,
-                                                     redirectUri,
-                                                     scope,
-                                                     ApplicationSettings.WebsiteUrl)
-                                    .ConfigureAwait(false);
+            MastodonRegisteredApp application = await api.AppsRegister(ApplicationSettings.ApplicationName,
+                                                                       redirectUri,
+                                                                       scope,
+                                                                       ApplicationSettings.WebsiteUrl).ConfigureAwait(false);
 
-            // $ は文字列補間 string.Format() に置換される
             System.Diagnostics.Debug.WriteLine($"ClientId: {application.ClientId}, ClientSecret: {application.ClientSecret}");
-
             return application;
         }
 
+        // ユーザの認可を求め、認可コードを発行するページの Uri を返す。この API はブラウザ経由でアクセスする
         public static Uri GetAuthorizeUri(Uri instanceUri, string clientId)
         {
-            using var api = new MastodonApi(instanceUri); // using 変数宣言
+            using var api = new MastodonApi(instanceUri);
 
-            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
+            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob"); // リダイレクトせずに認可コードを表示する
             string scope = "read write follow";
 
-            return api.OAuthAuthorize(clientId,
-                                      "code",
-                                      redirectUri,
-                                      scope);
+            return api.OAuthAuthorizeUri(null,
+                                         "code",
+                                         clientId,
+                                         redirectUri,
+                                         scope);
         }
 
         public static async Task<string> GetAccessTokenAsync(Uri instanceUri,
                                                              string clientId,
                                                              string clientSecret,
-                                                             string authorizationCode)
+                                                             string authorizationCode) // 認可コード
         {
-            using var api = new MastodonApi(instanceUri); // using 変数宣言
+            using var api = new MastodonApi(instanceUri);
 
-            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob");
+            var redirectUri = new Uri("urn:ietf:wg:oauth:2.0:oob"); // リダイレクトせずにアクセストークンを表示する
             var scope = "read write follow";
 
             var token = await api.OAuthToken(clientId,
                                              clientSecret,
                                              redirectUri,
-                                             "authorization_code",
+                                             scope,
                                              authorizationCode,
-                                             scope)
-                              .ConfigureAwait(false);
-
+                                             "authorization_code").ConfigureAwait(false);
             return token.AccessToken;
         }
 

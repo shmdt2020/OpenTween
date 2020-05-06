@@ -37,7 +37,7 @@ namespace OpenTween.Api
         public IMastodonApiConnection Connection { get; }
         public Uri InstanceUri { get; }
 
-        public MastodonApi(Uri instanceUri) : this(instanceUri, accessToken: null)
+        public MastodonApi(Uri instanceUri) : this(instanceUri, null)
         {
         }
 
@@ -47,16 +47,10 @@ namespace OpenTween.Api
             this.InstanceUri = instanceUri;
         }
 
-        public Task<MastodonAccount> AccountsVerifyCredentials()
-        {
-            var endpoint = new Uri("/api/v1/accounts/verify_credentials", UriKind.Relative);
-
-            return this.Connection.GetAsync<MastodonAccount>(endpoint, null);
-        }
-
+        // アプリケーションを登録して client_id, client_secret の組を取得する
         public async Task<MastodonRegisteredApp> AppsRegister(string clientName,
                                                               Uri redirectUris,
-                                                              string scopes,
+                                                              string? scopes = null,
                                                               string? website = null)
         {
             var endpoint = new Uri("/api/v1/apps", UriKind.Relative);
@@ -64,67 +58,62 @@ namespace OpenTween.Api
             {
                 ["client_name"]   = clientName,
                 ["redirect_uris"] = redirectUris.OriginalString,
-                ["scopes"]        = scopes,
             };
-
+            if (scopes  != null) param["scopes"]  = scopes;
             if (website != null) param["website"] = website;
 
-            var response = await this.Connection.PostLazyAsync<MastodonRegisteredApp>(endpoint, param)
-                                 .ConfigureAwait(false);
-
-            return await response.LoadJsonAsync()
-                         .ConfigureAwait(false);
+            var response = await this.Connection.PostLazyAsync<MastodonRegisteredApp>(endpoint, param).ConfigureAwait(false);
+            return await response.LoadJsonAsync().ConfigureAwait(false);
         }
 
-        public Task<MastodonInstance> Instance()
-        {
-            var endpoint = new Uri("/api/v1/instance", UriKind.Relative);
-
-            return this.Connection.GetAsync<MastodonInstance>(endpoint, null);
-        }
-
-        public Uri OAuthAuthorize(string clientId,
+        // ユーザの認可を求め、認可コードを発行するページの Uri を返す。この API はブラウザ経由でアクセスする
+        public Uri OAuthAuthorize(string? forceLogin,
                                   string responseType,
+                                  string clientId,
                                   Uri redirectUri,
-                                  string scope)
+                                  string? scope)
         {
             var endpoint = new Uri("/oauth/authorize", UriKind.Relative);
             var param = new Dictionary<string, string>
             {
-                ["client_id"]     = clientId,
                 ["response_type"] = responseType,
-                ["redirect_uri"]  = redirectUri.AbsoluteUri,
-                ["scope"]         = scope,
+                ["client_id"]     = clientId,
+                ["redirect_uri"]  = redirectUri.OriginalString,
             };
+            if (forceLogin != null) param["force_login"] = forceLogin;
+            if (scope      != null) param["scope"]       = scope;
 
             return new Uri(new Uri(this.InstanceUri, endpoint),
                            "?" + MyCommon.BuildQueryString(param));
         }
 
+        // アクセストークンを取得する
         public async Task<MastodonAccessToken> OAuthToken(string clientId,
                                                           string clientSecret,
                                                           Uri redirectUri,
-                                                          string grantType,
-                                                          string code,
-                                                          string? scope = null)
+                                                          string? scope = null,
+                                                          string? code = null, // 認可コード
+                                                          string grantType)
         {
             var endpoint = new Uri("/oauth/token", UriKind.Relative);
             var param = new Dictionary<string, string>
             {
                 ["client_id"]     = clientId,
                 ["client_secret"] = clientSecret,
-                ["redirect_uri"]  = redirectUri.AbsoluteUri,
+                ["redirect_uri"]  = redirectUri.OriginalString,
                 ["grant_type"]    = grantType,
-                ["code"]          = code,
             };
-
             if (scope != null) param["scope"] = scope;
+            if (code  != null) param["code"]  = code;
 
-            var response = await this.Connection.PostLazyAsync<MastodonAccessToken>(endpoint, param)
-                                 .ConfigureAwait(false);
+            var response = await this.Connection.PostLazyAsync<MastodonAccessToken>(endpoint, param).ConfigureAwait(false);
+            return await response.LoadJsonAsync().ConfigureAwait(false);
+        }
 
-            return await response.LoadJsonAsync()
-                         .ConfigureAwait(false);
+        public Task<MastodonAccount> AccountsVerifyCredentials()
+        {
+            var endpoint = new Uri("/api/v1/accounts/verify_credentials", UriKind.Relative);
+            return this.Connection.GetAsync<MastodonAccount>(endpoint, null);
         }
 
         public Task<MastodonStatus[]> TimelinesHome(long? maxId = null,
@@ -203,6 +192,12 @@ namespace OpenTween.Api
             var endpoint = new Uri($"/api/v1/statuses/{statusId}/unreblog", UriKind.Relative);
 
             return this.Connection.PostLazyAsync<MastodonStatus>(endpoint, null);
+        }
+
+        public Task<MastodonInstance> Instance()
+        {
+            var endpoint = new Uri("/api/v1/instance", UriKind.Relative);
+            return this.Connection.GetAsync<MastodonInstance>(endpoint, null);
         }
 
         public void Dispose() => this.Connection.Dispose();
