@@ -793,7 +793,7 @@ namespace OpenTween
         /// </remarks>
         /// <returns>アプリケーションのアセンブリ名</returns>
         public static string GetAssemblyName()
-            => MyCommon.EntryAssembly.GetName().Name ?? "OpenTween";
+            => "OpenTween"; //MyCommon.EntryAssembly.GetName().Name;
         /*
         /// <summary>
         /// 文字列中に含まれる %AppName% をアプリケーション名に置換する

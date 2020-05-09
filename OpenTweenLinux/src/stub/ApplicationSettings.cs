@@ -47,7 +47,7 @@ namespace OpenTween
         /// 派生版のアプリケーションでは名前にマルチバイト文字を含む場合があります。
         /// ファイル名など英数字のみを含めたい用途ではこのプロパティではなく <see cref="AssemblyName"/> を使用します
         /// </remarks>
-        public static string ApplicationName => "OpenTween";
+        public static string ApplicationName => "OpenTween"; //Application.ProductName;
 
         /// <summary>
         /// アセンブリ名

@@ -89,8 +89,7 @@ namespace OpenTween.Connection
                 }
                 catch (SerializationException ex)
                 {
-                    //throw new WebApiException("Invalid Response", responseText, ex);
-                    throw ex;
+                    throw ex; //throw new WebApiException("Invalid Response", responseText, ex);
                 }
             }
             catch (HttpRequestException ex)
@@ -141,8 +140,7 @@ namespace OpenTween.Connection
             }
             catch (HttpRequestException ex)
             {
-                //throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
-                throw ex;
+                throw ex; //throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
             }
             catch (OperationCanceledException ex)
             {
@@ -173,13 +171,11 @@ namespace OpenTween.Connection
             }
             catch (HttpRequestException ex)
             {
-                //throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
-                throw ex;
+                throw ex; //throw new WebApiException(ex.InnerException?.Message ?? ex.Message, ex);
             }
             catch (OperationCanceledException ex)
             {
-                //throw new WebApiException("Timeout", ex);
-                throw ex;
+                throw ex; //throw new WebApiException("Timeout", ex);
             }
         }
 

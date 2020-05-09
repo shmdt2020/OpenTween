@@ -72,8 +72,7 @@ namespace OpenTween.Connection
             }
             catch (SerializationException ex)
             {
-                //throw TwitterApiException.CreateFromException(ex, responseText);
-                throw ex;
+                throw ex; //throw TwitterApiException.CreateFromException(ex, responseText);
             }
         }
 
