@@ -19,55 +19,45 @@
 // the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
 // Boston, MA 02110-1301, USA.
 
-#nullable enable annotations
+#nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Net.Http;
-using System.Runtime.Serialization;
-using System.Text;
 using System.Threading.Tasks;
-using OpenTween.Api;
+using System.Runtime.Serialization;
 
 namespace OpenTween.Connection
 {
     /// <summary>
     /// HTTP レスポンスの受信と JSON のパース処理を延期させるクラス
     /// </summary>
-    public sealed class LazyJson<T> : IDisposable
+    public sealed class LazyJson<T> : IDisposable where T : class
     {
         public HttpResponseMessage? Response { get; }
-
-        private T instance;
-        private bool completed = false;
+        private T? instance;
 
         public LazyJson(HttpResponseMessage response)
-            => this.Response = response;
+        {
+            this.Response = response;
+            this.instance = null;
+        }
 
-        internal LazyJson(T instance)
+        public LazyJson(T instance)
         {
             this.Response = null;
-
             this.instance = instance;
-            this.completed = true;
         }
 
         public async Task<T> LoadJsonAsync()
         {
-            if (this.completed)
-                return this.instance!;
+            if (this.instance != null) return this.instance;
 
-            using var content = this.Response.Content;
-            var responseText = await content.ReadAsStringAsync()
-                .ConfigureAwait(false);
+            using HttpContent content = this.Response!.Content;
+            string responseText = await content.ReadAsStringAsync().ConfigureAwait(false);
 
             try
             {
                 this.instance = MyCommon.CreateDataFromJson<T>(responseText);
-                this.completed = true;
-
                 return this.instance;
             }
             catch (SerializationException ex)
@@ -76,22 +66,24 @@ namespace OpenTween.Connection
             }
         }
 
-        public void Dispose()
-            => this.Response?.Dispose();
+        public void Dispose() => this.Response?.Dispose();
     }
 
     public static class LazyJson
     {
-        public static LazyJson<T> Create<T>(T instance)
+        public static LazyJson<T> Create<T>(HttpResponseMessage response) where T : class
+            => new LazyJson<T>(response);
+
+        public static LazyJson<T> Create<T>(T instance) where T : class
             => new LazyJson<T>(instance);
     }
 
     public static class LazyJsonTaskExtension
     {
-        public static async Task IgnoreResponse<T>(this Task<LazyJson<T>> task)
+        public static async Task IgnoreResponse<T>(this Task<LazyJson<T>> task) where T : class
         {
-            using var lazyJson = await task.ConfigureAwait(false);
             // レスポンスボディを読み込まず破棄する
+            using LazyJson<T> lazyJson = await task.ConfigureAwait(false);
         }
     }
 }

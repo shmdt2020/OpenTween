@@ -33,8 +33,8 @@ namespace OpenTween.Connection
     {
         Task<T>           GetAsync<T>(                        Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
 
-        Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
-        Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
+        Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param) where T : class;
+        Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param) where T : class;
 
         Task<Stream>      GetStreamAsync(                     Uri uri, IEnumerable<KeyValuePair<string, string>>? param);
     }

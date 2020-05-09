@@ -22,10 +22,7 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace OpenTween
 {
@@ -37,24 +34,21 @@ namespace OpenTween
     {
         public string? ResponseText { get; } = null;
 
-        public WebApiException() { }
-        public WebApiException(string message) : base(message) { }
-        public WebApiException(string message, Exception innerException) : base(message, innerException) { }
+        public WebApiException() : base() {}
+        public WebApiException(string message) : base(message) {}
+        public WebApiException(string message, Exception innerException) : base(message, innerException) {}
 
-        public WebApiException(string message, string responseText)
-            : this(message)
+        public WebApiException(string message, string responseText) : this(message)
         {
             this.ResponseText = responseText;
         }
 
-        public WebApiException(string message, string responseText, Exception innerException)
-            : this(message, innerException)
+        public WebApiException(string message, string responseText, Exception innerException) : this(message, innerException)
         {
             this.ResponseText = responseText;
         }
 
-        protected WebApiException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
+        protected WebApiException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             this.ResponseText = info.GetString("ResponseText");
         }

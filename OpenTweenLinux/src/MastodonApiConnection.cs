@@ -102,10 +102,10 @@ namespace OpenTween.Connection
             }
         }
 
-        public       Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
+        public       Task<LazyJson<T>> PostLazyAsync<T>(                   Uri uri, IEnumerable<KeyValuePair<string, string>>? param) where T : class
             => this.PostLazyAsync<T>(HttpMethod.Post, uri, param);
 
-        public async Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param)
+        public async Task<LazyJson<T>> PostLazyAsync<T>(HttpMethod method, Uri uri, IEnumerable<KeyValuePair<string, string>>? param) where T : class
         {
             var requestUri = new Uri(this.InstanceUri, uri);
 
