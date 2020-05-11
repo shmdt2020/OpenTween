@@ -66,10 +66,10 @@ namespace OpenTween.Connection
             // この時点ではまだレスポンスボディは読まれない
             Assert.Equal(0, bodyStream.Position);
 
-            var exception = await Assert.ThrowsAnyAsync<WebApiException>(() => lazyJson.LoadJsonAsync())
+            var exception = await Assert.ThrowsAnyAsync<SerializationException>(() => lazyJson.LoadJsonAsync()) //var exception = await Assert.ThrowsAnyAsync<WebApiException>(() => lazyJson.LoadJsonAsync())
                 .ConfigureAwait(false);
 
-            Assert.IsType<SerializationException>(exception.InnerException);
+            Assert.IsType<SerializationException>(exception); //Assert.IsType<SerializationException>(exception.InnerException);
         }
 
         [Fact]

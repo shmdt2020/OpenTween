@@ -8,4 +8,6 @@ TestResult.xml
 *.VisualState.xml
 OpenTweenLinux/bin/*
 OpenTweenLinux/obj/*
+OpenTweenLinux.Tests/bin/*
+OpenTweenLinux.Tests/obj/*
 *~
