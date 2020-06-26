@@ -1,12 +1,23 @@
-﻿using System;
+using System;
+using Gtk;
 
 namespace OpenTweenLinux
 {
     class Program
     {
-        static void Main(string[] args)
+        [STAThread]
+        public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Application.Init();
+
+            var app = new Application("org.OpenTweenLinux.OpenTweenLinux", GLib.ApplicationFlags.None);
+            app.Register(GLib.Cancellable.Current);
+
+            var win = new MainWindow();
+            app.AddWindow(win);
+
+            win.Show();
+            Application.Run();
         }
     }
 }
