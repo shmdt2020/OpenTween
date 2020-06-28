@@ -25,6 +25,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
+//using OpenTween.Api;
 
 namespace OpenTween.Connection
 {
@@ -78,7 +79,7 @@ namespace OpenTween.Connection
             => new LazyJson<T>(instance);
     }
 
-    public static class LazyJsonTaskExtension
+    public static class TaskLazyJsonExtensions
     {
         public static async Task IgnoreResponse<T>(this Task<LazyJson<T>> task) where T : class
         {

@@ -2,7 +2,7 @@ using System;
 using Gtk;
 using UI = Gtk.Builder.ObjectAttribute;
 
-namespace OpenTweenLinux
+namespace OpenTween
 {
     class MainWindow : Window
     {

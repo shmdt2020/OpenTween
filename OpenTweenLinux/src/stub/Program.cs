@@ -1,7 +1,7 @@
 using System;
 using Gtk;
 
-namespace OpenTweenLinux
+namespace OpenTween
 {
     class Program
     {
@@ -10,7 +10,7 @@ namespace OpenTweenLinux
         {
             Application.Init();
 
-            var app = new Application("org.OpenTweenLinux.OpenTweenLinux", GLib.ApplicationFlags.None);
+            var app = new Application("OpenTween", GLib.ApplicationFlags.None);
             app.Register(GLib.Cancellable.Current);
 
             var win = new MainWindow();

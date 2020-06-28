@@ -38,19 +38,19 @@ namespace OpenTween
         public WebApiException(string message) : base(message) {}
         public WebApiException(string message, Exception innerException) : base(message, innerException) {}
 
+        protected WebApiException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+            this.ResponseText = info.GetString("ResponseText");
+        }
+
         public WebApiException(string message, string responseText) : this(message)
         {
             this.ResponseText = responseText;
         }
 
-        public WebApiException(string message, string responseText, Exception innerException) : this(message, innerException)
+        public WebApiException(string message, Exception innerException, string responseText) : this(message, innerException)
         {
             this.ResponseText = responseText;
-        }
-
-        protected WebApiException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-            this.ResponseText = info.GetString("ResponseText");
         }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)

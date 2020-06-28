@@ -19,14 +19,14 @@
 // the Free Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
 // Boston, MA 02110-1301, USA.
 
-using System.Threading.Tasks;
 using System.Text;
 using System.IO;
 using System.Net.Http;
 using Xunit;
-using System;
+using System.Threading.Tasks;
 using System.Runtime.Serialization;
 //using OpenTween.Api;
+using System;
 
 namespace OpenTween.Connection
 {
@@ -74,16 +74,14 @@ namespace OpenTween.Connection
             using var response = new HttpResponseMessage() { Content = new StreamContent(bodyStream) };
             using var lazyJson = new LazyJson<string>(response);
 
-            // レスポンスボディを読まずに破棄
-            await Task.FromResult(lazyJson).IgnoreResponse().ConfigureAwait(false);
+            Task<LazyJson<string>> task = Task.FromResult<LazyJson<string>>(lazyJson);
+            await task.IgnoreResponse().ConfigureAwait(false); // レスポンスボディを読まずに破棄
 
             Assert.True(bodyStream.IsDisposed);
         }
 
         class InvalidStream : Stream
         {
-            public bool IsDisposed { get; private set; } = false;
-
             public override bool CanRead => true;
             public override bool CanSeek => false;
             public override bool CanWrite => false;
@@ -93,11 +91,15 @@ namespace OpenTween.Connection
                 get => 0L;
                 set => throw new NotSupportedException();
             }
+            public bool IsDisposed { get; private set; } = false;
 
             public override void Flush()
                 => throw new NotSupportedException();
 
             public override int Read(byte[] buffer, int offset, int count)
+                => throw new IOException();
+
+            public override int Read(Span<byte> buffer)
                 => throw new IOException();
 
             public override long Seek(long offset, SeekOrigin origin)
@@ -107,6 +109,9 @@ namespace OpenTween.Connection
                 => throw new NotSupportedException();
 
             public override void Write(byte[] buffer, int offset, int count)
+                => throw new NotSupportedException();
+
+            public override void Write(ReadOnlySpan<byte> buffer)
                 => throw new NotSupportedException();
 
             protected override void Dispose(bool disposing)
